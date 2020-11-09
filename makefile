@@ -1,7 +1,7 @@
 all: Parser Scanner YourCode 
-	gcc BabyC.tab.o lex.yy.o driver.o your_code.o SymbolTable.o bucket.o -o bcc -lm
+	gcc BabyC.tab.o lex.yy.o driver.o your_code.o SymbolTable.o bucket.o Utilities.o registerGenerator.o InstructionsEmitter.o LabelGenerator.o  -o bcc -lm
 
-YourCode: bucket.o SymbolTable.o your_code.o driver.o 
+YourCode: bucket.o SymbolTable.o Utilities.o registerGenerator.o InstructionsEmitter.o LabelGenerator.o your_code.o driver.o 
 
 Scanner: BabyC.lex 
 	flex BabyC.lex

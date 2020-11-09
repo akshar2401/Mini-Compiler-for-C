@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "your_code.h"
+#include <string.h>
+#include "compiler.h"
 
 extern FILE* yyin;
 extern int yyparse();
@@ -27,6 +28,16 @@ int main(int argc, char**argv)
         fclose(yyin);
 
         // Now that the AST has been constructed, pass its root to the function that traverses it and generates the ILOC code.
-        // GenerateILOC(gASTRoot);
+        char * test = strtok(argv[1], ".");
+        char * outputfile = (char *) calloc(strlen(test) + 8, sizeof(char));
+        strcat(outputfile, test);
+        strcat(outputfile, ".iloc");
+        FILE * output = fopen(outputfile, "w+");
+        fputs("", output);
+        fclose(output);
+        output = fopen(outputfile, "a+");
+        
+       // FILE * outputFile = fopen(, "a+");
+         GenerateILOC(gASTRoot, output);
         // Code generation is commented out in this assignment. You will implement it in the next assignment. 		
 }

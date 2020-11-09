@@ -1,7 +1,8 @@
-#ifndef YOUR_CODE_H
-#define YOUR_CODE_H
+#ifndef COMPILER
+#define COMPILER
+#include <stdio.h>
 #include "SymbolTable.h"
-typedef enum{ASTNODE_ARITH_OP, ASTNODE_LOGIC_OP, ASTNODE_COMPARE, ASTNODE_ASSIGN, ASTNODE_IDENT, ASTNODE_NUM, ASTNODE_IF, ASTNODE_IFELSE,ASTNODE_WHILE} ASTNodeType;
+typedef enum{ASTNODE_ARITH_OP, ASTNODE_LOGIC_OP, ASTNODE_COMPARE, ASTNODE_ASSIGN, ASTNODE_IDENT, ASTNODE_NUM, ASTNODE_IF, ASTNODE_IFELSE,ASTNODE_WHILE, ASTNODE_STMT, ASTNODE_IFELSELOOPBODY} ASTNodeType;
 
 // Define all operation types (add, mult, etc) here.
 typedef enum{
@@ -60,5 +61,5 @@ ASTNode * CreateWhileNode(ASTNode* left, ASTNode * right);
 //void AddDeclaration(char* name);
 
 // This is the function that generates ILOC code after the construction of the AST
-//void GenerateILOC(ASTNode* node);
+void GenerateILOC(ASTNode* node, FILE * output);
 #endif

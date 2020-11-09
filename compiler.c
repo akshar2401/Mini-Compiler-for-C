@@ -1,11 +1,14 @@
-#include "your_code.h"
+#include "compiler.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include "SymbolTable.h"
+#include "Utilities.h"
+#include "registerGenerator.h"
+#include "InstructionsEmitter.h"
+#include "LabelGenerator.h"
 
 
-// Write the implementations of the functions that do the real work here
 SymbolTable * table = NULL;
 int yyerror(const char * );
 ASTNode * getNode(){
@@ -99,9 +102,12 @@ ASTNode * CreateAssignmentNode(ASTNode * left, ASTNode * right){
 // Return a pointer to the bigger list that resulted from this linking
 ASTNode* CreateStatementListNode(ASTNode* st, ASTNode* stList)
 {
-        st->next =  stList;
+        ASTNode * node = getNode();
+        node->type = ASTNODE_STMT;
+        node->left = st;
+        node->right = stList;
         printf("Adding a Statement to a Statement list\n");
-        return st;
+        return node;
 }
 
 
@@ -113,7 +119,7 @@ void addDeclaration(char * name){
         
         if(status == -1){
                 char prefix[] = "Multiple declarations of ";
-                char * message = calloc(strlen(name) + strlen(prefix) + 2, sizeof(char));
+                char * message = calloc(strlen(name) + strlen(prefix) + 4, sizeof(char));
                 strcpy(message, prefix);
                 strcat(message, "'");
                 strcat(message, name);
@@ -160,8 +166,11 @@ ASTNode * CreateIfElseNode(ASTNode * left, ASTNode * right, ASTNode * next){
         ASTNode * node = getNode();
         node->type = ASTNODE_IFELSE;
         node->left = left;
-        node->right = right;
-        node->next = next;
+        ASTNode * ifelseBodyNode = getNode();
+        ifelseBodyNode->type = ASTNODE_IFELSELOOPBODY;
+        ifelseBodyNode->left = right;
+        ifelseBodyNode->right = next;
+        node->right = ifelseBodyNode;
         printf("Creating if-else Statement node\n");
         return node;
 }
@@ -174,9 +183,80 @@ ASTNode * CreateWhileNode(ASTNode* left, ASTNode * right){
         printf("Creating while loop node\n");
         return node;
 }
-// Commented out in this assignment 
-/*void GenerateILOC(ASTNode* node);
-{
 
-}*/
+char * generateCode(ASTNode * node, RegisterGenerator* regGen, LabelGenerator * labGen, FILE * output){
+    char * lreg = NULL;
+    char * rreg = NULL;
+    char * reg = NULL;
+    char * labels []= {"", "", "", ""};
+    switch(node->type){
+        case ASTNODE_IDENT:
+            reg = generate(regGen);
+            fputs(emitLoadForIdentifier(node->name, table, reg), output);
+            return reg;
+        case ASTNODE_NUM:
+            reg = generate(regGen);
+            fputs(emitLoadForNum(node->num, reg), output);
+            return reg;
+        case ASTNODE_ASSIGN:
+            rreg = generateCode(node->right, regGen, labGen, output);
+            fputs(emitStoreForAssignment(rreg, table, node->left->name), output);
+            return "";
+        case ASTNODE_STMT:
+            generateCode(node->left, regGen, labGen, output);
+            if(node->right){
+                generateCode(node->right, regGen, labGen,output);
+            }
+            return "";
+        case ASTNODE_ARITH_OP:
+        case ASTNODE_COMPARE:
+        case ASTNODE_LOGIC_OP:
+            lreg = generateCode(node->left, regGen, labGen,output);
+            rreg = generateCode(node->right, regGen,labGen,output);
 
+            reg = generate(regGen);
+            fputs(emitBinaryInstruction((int) node->op, lreg, rreg, reg), output);
+            return reg;
+        case ASTNODE_IF:
+            getIfLabelName(labGen, labels);
+            lreg = generateCode(node->left, regGen, labGen,output);
+            fputs(emitCBRInstruction(lreg, labels[0], labels[1]), output);
+            fputs(getLabelString(labels[0]), output);
+            generateCode(node->right, regGen, labGen,output);
+            fputs(getLabelString(labels[1]), output);
+            return "";
+        case ASTNODE_WHILE:
+            getWhileLabelName(labGen,labels);
+            fputs(getLabelString(labels[0]), output);
+            lreg  = generateCode(node->left, regGen, labGen,output);
+            fputs(emitCBRInstruction(lreg, labels[1], labels[2]), output);
+            fputs(getLabelString(labels[1]), output);
+            generateCode(node->right, regGen, labGen,output);
+            fputs(emitJumpInstruction(labels[0]), output);
+            fputs(getLabelString(labels[2]),output);
+            return "";
+        case ASTNODE_IFELSE:
+            getIfElseLabelName(labGen, labels);
+            lreg = generateCode(node->left, regGen, labGen, output);
+            fputs(emitCBRInstruction(lreg, labels[0], labels[1]), output);
+             fputs(getLabelString(labels[0]), output);
+            generateCode(node->right->left, regGen, labGen,output);
+            fputs(emitJumpInstruction(labels[2]), output);
+            fputs(getLabelString(labels[1]), output);
+            generateCode(node->right->right, regGen, labGen,output);
+            fputs(getLabelString(labels[2]), output);
+            return "";
+        default:
+            return "";
+    }
+}
+void GenerateILOC(ASTNode* node, FILE * output){
+        RegisterGenerator * regGen = createRegisterGenerator();
+        LabelGenerator * labelGen = createLabelGenerator();
+        if(node == NULL){
+	  fputs("", output);
+	} else{
+	        generateCode(node, regGen, labelGen, output);
+	}
+        fclose(output);
+}
