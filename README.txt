@@ -14,7 +14,7 @@ the loadfactor will increase, and the table will be resized after loadfactor bec
 
 
 Output
-1) The program will still print the statements from Assigment 4
+1) The program will still print the statements
 2) The generated code is directed to file created based on test file.Look for files with name created using format: test<testnumber>.iloc
 
 Changes:
